@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nautical Dashboard</title>
+  <style>
+    body {
+      background: linear-gradient(to bottom, #87CEFA, #ffffff);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #003366;
+    }
+    header {
+      background-color: #003366;
+      color: #ffffff;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #e6f2ff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .live-info h2, .files-list h2 {
+      border-bottom: 2px solid #003366;
+      padding-bottom: 0.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background-color: #cce6ff;
+    }
+    button.download-btn {
+      background-color: #003366;
+      color: #fff;
+      border: none;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button.download-btn:hover {
+      background-color: #002244;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    Nautical Dashboard
+  </header>
+  <main>
+    <section class="live-info">
+      <h2>Live Information</h2>
+      <div id="live-id"><strong>ID:</strong> <span>Loading...</span></div>
+      <div id="live-temperature"><strong>Temperature:</strong> <span>Loading...</span></div>
+      <div id="live-accelerometer"><strong>Accelerometer:</strong> <span>Loading...</span></div>
+      <div id="live-magnetometer"><strong>Magnetometer:</strong> <span>Loading...</span></div>
+      <div id="live-gyroscope"><strong>Gyroscope:</strong> <span>Loading...</span></div>
+    </section>
+
+    <section class="files-list">
+      <h2>Data Files</h2>
+      <table id="files-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Size (bytes)</th>
+            <th>Date</th>
+            <th>Download</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    function updateLiveInfo() {
+      fetch('/live')
+        .then(response => response.text())
+        .then(data => {
+          const lines = data.trim().split('\n');
+          const info = {};
+          lines.forEach(line => {
+            const parts = line.split(':');
+            const key = parts[0].trim();
+            const value = parts.slice(1).join(':').trim();
+            info[key] = value.replace(/^"|"$/g, '');
+          });
+
+          document.querySelector('#live-id span').textContent = info['id'] || 'N/A';
+          document.querySelector('#live-temperature span').textContent = info['temperature'] || 'N/A';
+          document.querySelector('#live-accelerometer span').textContent = info['accelerometer'] || 'N/A';
+          document.querySelector('#live-magnetometer span').textContent = info['magnetometer'] || 'N/A';
+          document.querySelector('#live-gyroscope span').textContent = info['gyroscope'] || 'N/A';
+        })
+        .catch(err => console.error('Error fetching live info:', err));
+    }
+
+    function loadFilesList() {
+      fetch('/files')
+        .then(response => response.text())
+        .then(data => {
+          const tbody = document.querySelector('#files-table tbody');
+          tbody.innerHTML = '';
+          data.trim().split('\n').forEach(line => {
+            const match = line.match(/"([^\"]+)"\s+(\d+)\s+"([^"]+)"/);
+            if (match) {
+              const [_, filename, size, date] = match;
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${filename}</td>
+                <td>${size}</td>
+                <td>${date}</td>
+                <td><button class="download-btn" onclick="downloadFile('${filename}')">Download</button></td>
+              `;
+              tbody.appendChild(tr);
+            }
+          });
+        })
+        .catch(err => console.error('Error fetching file list:', err));
+    }
+
+    function downloadFile(filename) {
+      const a = document.createElement('a');
+      a.href = `/files/${encodeURIComponent(filename)}`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    window.onload = function() {
+      loadFilesList();
+      updateLiveInfo();
+      setInterval(updateLiveInfo, 5000);
+    };
+  </script>
+</body>
+</html>
+
