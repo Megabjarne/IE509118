@@ -6,6 +6,8 @@
 #include <SPI.h>
 #include <SD.h>
 
+#include "web.hpp"
+
 // Create sensor instances.
 Adafruit_LSM303_Accel_Unified accel(30301);
 Adafruit_LSM303DLH_Mag_Unified mag(30302);
