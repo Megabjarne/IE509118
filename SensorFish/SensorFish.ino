@@ -44,74 +44,82 @@ void setup()
   // Initialize the sensors.
   accel.begin();
   mag.begin();
+
+  // start web server
+  web_setup();
 }
+
+unsigned long last_sample = 0;
 
 void loop(void)
 {
-  sensors_vec_t orientation;
-  sensors_event_t accel_event, mag_event;
-  unsigned long timestamp = millis(); // Get time in milliseconds
+  if (millis() - last_sample > 100) {
+    last_sample = millis();
+    sensors_vec_t orientation;
+    sensors_event_t accel_event, mag_event;
+    unsigned long timestamp = millis(); // Get time in milliseconds
 
-  // Get accelerometer and magnetometer data
-  accel.getEvent(&accel_event);
-  mag.getEvent(&mag_event);
+    // Get accelerometer and magnetometer data
+    accel.getEvent(&accel_event);
+    mag.getEvent(&mag_event);
 
-  // Use the simple AHRS function to get the current orientation.
-  if (ahrs.getOrientation(&orientation))
-  {
-    /* Print orientation data */
-    Serial.print(F("Time(ms): "));
-    Serial.print(timestamp);
-    Serial.print(F(" | Roll: "));
-    Serial.print(orientation.roll);
-    Serial.print(F(" Pitch: "));
-    Serial.print(orientation.pitch);
-    Serial.print(F(" Heading: "));
-    Serial.println(orientation.heading);
+    // Use the simple AHRS function to get the current orientation.
+    if (ahrs.getOrientation(&orientation))
+    {
+      /* Print orientation data */
+      Serial.print(F("Time(ms): "));
+      Serial.print(timestamp);
+      Serial.print(F(" | Roll: "));
+      Serial.print(orientation.roll);
+      Serial.print(F(" Pitch: "));
+      Serial.print(orientation.pitch);
+      Serial.print(F(" Heading: "));
+      Serial.println(orientation.heading);
+    }
+
+    /* Print accelerometer data */
+    Serial.print(F("Accelerometer (m/s²): X="));
+    Serial.print(accel_event.acceleration.x);
+    Serial.print(F(" Y="));
+    Serial.print(accel_event.acceleration.y);
+    Serial.print(F(" Z="));
+    Serial.println(accel_event.acceleration.z);
+
+    /* Print magnetometer data */
+    Serial.print(F("Magnetometer (µT): X="));
+    Serial.print(mag_event.magnetic.x);
+    Serial.print(F(" Y="));
+    Serial.print(mag_event.magnetic.y);
+    Serial.print(F(" Z="));
+    Serial.println(mag_event.magnetic.z);
+
+    // Save data to SD card
+    dataFile = SD.open("data.csv", FILE_WRITE);
+    if (dataFile) {
+      dataFile.print(timestamp);
+      dataFile.print(",");
+      dataFile.print(orientation.roll);
+      dataFile.print(",");
+      dataFile.print(orientation.pitch);
+      dataFile.print(",");
+      dataFile.print(orientation.heading);
+      dataFile.print(",");
+      dataFile.print(accel_event.acceleration.x);
+      dataFile.print(",");
+      dataFile.print(accel_event.acceleration.y);
+      dataFile.print(",");
+      dataFile.print(accel_event.acceleration.z);
+      dataFile.print(",");
+      dataFile.print(mag_event.magnetic.x);
+      dataFile.print(",");
+      dataFile.print(mag_event.magnetic.y);
+      dataFile.print(",");
+      dataFile.println(mag_event.magnetic.z);
+      dataFile.close();
+    } else {
+      Serial.println(F("Error opening data.csv"));
+    }
   }
 
-  /* Print accelerometer data */
-  Serial.print(F("Accelerometer (m/s²): X="));
-  Serial.print(accel_event.acceleration.x);
-  Serial.print(F(" Y="));
-  Serial.print(accel_event.acceleration.y);
-  Serial.print(F(" Z="));
-  Serial.println(accel_event.acceleration.z);
-
-  /* Print magnetometer data */
-  Serial.print(F("Magnetometer (µT): X="));
-  Serial.print(mag_event.magnetic.x);
-  Serial.print(F(" Y="));
-  Serial.print(mag_event.magnetic.y);
-  Serial.print(F(" Z="));
-  Serial.println(mag_event.magnetic.z);
-
-  // Save data to SD card
-  dataFile = SD.open("data.csv", FILE_WRITE);
-  if (dataFile) {
-    dataFile.print(timestamp);
-    dataFile.print(",");
-    dataFile.print(orientation.roll);
-    dataFile.print(",");
-    dataFile.print(orientation.pitch);
-    dataFile.print(",");
-    dataFile.print(orientation.heading);
-    dataFile.print(",");
-    dataFile.print(accel_event.acceleration.x);
-    dataFile.print(",");
-    dataFile.print(accel_event.acceleration.y);
-    dataFile.print(",");
-    dataFile.print(accel_event.acceleration.z);
-    dataFile.print(",");
-    dataFile.print(mag_event.magnetic.x);
-    dataFile.print(",");
-    dataFile.print(mag_event.magnetic.y);
-    dataFile.print(",");
-    dataFile.println(mag_event.magnetic.z);
-    dataFile.close();
-  } else {
-    Serial.println(F("Error opening data.csv"));
-  }
-
-  delay(100);
+  web_process();
 }
