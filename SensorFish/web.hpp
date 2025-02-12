@@ -30,6 +30,7 @@ void process_filedownload(void);
 WiFiServer server(80);
 
 const unsigned int header_buffer_size = 32;
+File root;
 struct {
   bool active;
   WiFiClient client;
@@ -49,9 +50,6 @@ struct {
       bool header_sent;
       unsigned int bytes_sent;
     } index;
-    struct {
-        File root;
-    } filelist;
     struct {
       bool header_sent;
       unsigned int bytes_sent;
@@ -156,7 +154,7 @@ void process_unknown(void) {
 
   if (strncmp(buff, "/files ", 7) == 0) {
     current_client.type = current_client.FILELIST;
-    current_client.filelist.root = SD.open("/");
+    root = SD.open("/");
     return;
   }
 
@@ -258,7 +256,7 @@ void process_filelist(void) {
   current_client.client.println();
 
   //current_client.client.println("\"data1.csv\" 1337 \"2025-02-04\"");
-  File next_file = current_client.filelist.root.openNextFile();
+  File next_file = root.openNextFile();
   if (next_file) {
     if (!next_file.isDirectory()) {
         current_client.client.print(next_file.name());
@@ -267,7 +265,7 @@ void process_filelist(void) {
         current_client.client.println(" \"unknown date\"");
     }
   } else {
-    current_client.filelist.root.close();
+    root.close();
     delay(1);
     current_client.client.flush();
     current_client.client.stop();
