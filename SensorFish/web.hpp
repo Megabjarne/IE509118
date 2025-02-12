@@ -2,7 +2,9 @@
 #define _WEB_CPP
 
 #include <WiFiNINA.h>
+#include <avr/dtostrf.h>
 #include "index.h"
+#include "sensordata.h"
 
 #ifndef WIFI_SSID
   #define WIFI_SSID "test_ap"
