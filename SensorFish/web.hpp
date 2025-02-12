@@ -208,16 +208,42 @@ void process_index(void) {
 };
 
 void process_livedata(void) {
+  char buffer[12];
   current_client.client.println("HTTP/1.1 200 OK");
   current_client.client.println("Content-type:text/text");
   current_client.client.println();
 
-  current_client.client.println("id: \"Sensorfish\"");
-  current_client.client.println("temperature: 20.3");
-  current_client.client.println("accelerometer: [1.2, 2.3, 3.4]");
-  current_client.client.println("magnetometer: [1.2, 2.3, 3.4]");
-  current_client.client.println("gyroscope: [1.2, 2.3, 3.4]");
-  delay(10);
+  current_client.client.println("id: \"Sensorfish_1\"");
+  
+  current_client.client.print("temperature: ");
+  dtostrf(sensor_readings.temperature, 0, 3, buffer);
+  current_client.client.println(buffer);
+  
+  current_client.client.println("accelerometer: [");
+  dtostrf(sensor_readings.accelerometer.x, 0, 3, buffer);
+  current_client.client.print(buffer);
+  current_client.client.print(", ");
+  dtostrf(sensor_readings.accelerometer.y, 0, 3, buffer);
+  current_client.client.print(buffer);
+  current_client.client.print(", ");
+  dtostrf(sensor_readings.accelerometer.z, 0, 3, buffer);
+  current_client.client.print(buffer);
+  current_client.client.println("]");
+  
+  current_client.client.println("magnetometer: [0.000, 0.000, 0.000]");
+  
+  current_client.client.println("gyroscope: [");
+  dtostrf(sensor_readings.gyroscope.x, 0, 3, buffer);
+  current_client.client.print(buffer);
+  current_client.client.print(", ");
+  dtostrf(sensor_readings.gyroscope.y, 0, 3, buffer);
+  current_client.client.print(buffer);
+  current_client.client.print(", ");
+  dtostrf(sensor_readings.gyroscope.z, 0, 3, buffer);
+  current_client.client.print(buffer);
+  current_client.client.println("]");
+  
+  delay(1);
   current_client.client.flush();
   current_client.client.stop();
   current_client.active = false;
