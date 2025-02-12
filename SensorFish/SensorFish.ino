@@ -4,11 +4,21 @@
 #include "web.hpp"
 #include "sensordata.h"
 
+// Define the analog pin for the TMP36 sensor's Vout pin
+#define sensorPin A0
+
 // SD card setup
 const int chipSelect = 10;
 File dataFile;
 
 unsigned long last_sample = 0;
+// Timer for reading the TMP36 sensor every 1000 ms
+unsigned long lastTempSample = 0;
+
+// Circular buffer for averaging the last 10 temperature readings
+float tempReadings[10] = {0};
+int tempIndex = 0;
+int tempCount = 0; // how many readings have been stored (max 10)
 
 void setup() {
   Serial.begin(115200);
@@ -40,10 +50,6 @@ void setup() {
   }
 
   // Optionally print sensor sample rates for reference
-  Serial.print("Temperature sensor sample rate = ");
-  Serial.print(IMU.temperatureSampleRate());
-  Serial.println(" Hz");
-
   Serial.print("Gyroscope sample rate = ");
   Serial.print(IMU.gyroscopeSampleRate());
   Serial.println(" Hz");
@@ -57,14 +63,44 @@ void setup() {
 }
 
 void loop() {
-  // Sample every 100ms
+  // Sample every 100 ms
   if (millis() - last_sample > 100) {
     sensor_readings.timestamp = millis();
     last_sample = sensor_readings.timestamp;
 
+    // Read the TMP36 temperature sensor every 1000 ms
+    if (millis() - lastTempSample >= 1000) {
+      int reading = analogRead(sensorPin);
+      // Convert the analog reading to voltage (adjust 3.3 if your board uses a different Vref)
+      float voltage = reading * (3.3 / 1024.0);
+      // Convert voltage to temperature in Celsius (TMP36 specifics: 500 mV offset and 10 mV/°C scale factor, plus offset correction)
+      float temperatureC = (voltage - 0.5) * 100 + 9;
+      
+      // Store new temperature reading in the circular buffer
+      tempReadings[tempIndex] = temperatureC;
+      tempIndex = (tempIndex + 1) % 10;
+      if (tempCount < 10) {
+        tempCount++;
+      }
+      
+      // Compute the average of the last readings
+      float sum = 0;
+      for (int i = 0; i < tempCount; i++) {
+        sum += tempReadings[i];
+      }
+      float avgTemperature = sum / tempCount;
+      sensor_readings.temperature = avgTemperature;
+      
+      lastTempSample = millis();
+    }
+    
+    // Alternatively, if you prefer to use the IMU's temperature sensor, you could use:
+    /*
     if (IMU.temperatureAvailable()) {
       IMU.readTemperature(sensor_readings.temperature);
     }
+    */
+
     if (IMU.gyroscopeAvailable()) {
       IMU.readGyroscope(
         sensor_readings.gyroscope.x,
@@ -83,9 +119,9 @@ void loop() {
     // Print sensor readings to Serial
     Serial.print("Time(ms): ");
     Serial.print(sensor_readings.timestamp);
-    Serial.print(" | Temp (C): ");
+    Serial.print(" | Avg Temp (C): ");
     Serial.print(sensor_readings.temperature);
-    Serial.print(" | sensor_readings.gyroscope.yro (dps): X: ");
+    Serial.print(" | Gyro (dps): X: ");
     Serial.print(sensor_readings.gyroscope.x);
     Serial.print(" Y: ");
     Serial.print(sensor_readings.gyroscope.y);
