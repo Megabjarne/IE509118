@@ -256,7 +256,7 @@ void process_filelist(void) {
 
   current_client.client.println("\"data1.csv\" 1337 \"2025-02-04\"");
   current_client.client.println("\"data2.csv\" 47 \"2025-02-05\"");
-  delay(10);
+  delay(1);
   current_client.client.flush();
   current_client.client.stop();
   current_client.active = false;
@@ -270,41 +270,11 @@ void process_filedownload(void) {
 
   current_client.client.println("ok, ja");
   current_client.client.println("1, 2");
-  delay(10);
+  delay(1);
 
   current_client.client.flush();
   current_client.client.stop();
   current_client.active = false;
 };
-
-/*
-      Serial.println("new client");           // print a message out the serial port
-
-      delayMicroseconds(10);                // This is required for the Arduino Nano RP2040 Connect - otherwise it will loop so fast that SPI will never be served.
-      
-      delay(10);
-
-      client.println("HTTP/1.1 200 OK");
-      client.println("Content-type:text/html");
-      client.println();
-
-      // the content of the HTTP response follows the header:
-      unsigned int bytes_written = 0;
-      while (bytes_written < ___webui_index_html_len) {
-        int n = client.write(((char*)___webui_index_html) + bytes_written, min(___webui_index_html_len - bytes_written, 64));
-        bytes_written += n;
-        delay(1);
-      }
-
-      // The HTTP response ends with another blank line:
-      client.println();
-      // close the connection:
-      client.flush();
-      client.stop();
-      Serial.println("client disconnected");
-    }
-    delay(1);
-  }
-}*/
 
 #endif
