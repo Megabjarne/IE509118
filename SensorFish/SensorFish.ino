@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include "web.hpp"
+#include "sensordata.h"
 
 // SD card setup
 const int chipSelect = 10;
@@ -58,57 +59,63 @@ void setup() {
 void loop() {
   // Sample every 100ms
   if (millis() - last_sample > 100) {
-    last_sample = millis();
-    float temperature = 0.0, gx = 0.0, gy = 0.0, gz = 0.0;
-    float ax = 0.0, ay = 0.0, az = 0.0;
-    unsigned long timestamp = millis();
+    sensor_readings.timestamp = millis();
+    last_sample = sensor_readings.timestamp;
 
     if (IMU.temperatureAvailable()) {
-      IMU.readTemperature(temperature);
+      IMU.readTemperature(sensor_readings.temperature);
     }
     if (IMU.gyroscopeAvailable()) {
-      IMU.readGyroscope(gx, gy, gz);
+      IMU.readGyroscope(
+        sensor_readings.gyroscope.x,
+        sensor_readings.gyroscope.y,
+        sensor_readings.gyroscope.z
+      );
     }
     if (IMU.accelerationAvailable()) {
-      IMU.readAcceleration(ax, ay, az);
+      IMU.readAcceleration(
+        sensor_readings.accelerometer.x,
+        sensor_readings.accelerometer.y,
+        sensor_readings.accelerometer.z
+      );
     }
 
     // Print sensor readings to Serial
     Serial.print("Time(ms): ");
-    Serial.print(timestamp);
+    Serial.print(sensor_readings.timestamp);
     Serial.print(" | Temp (C): ");
-    Serial.print(temperature);
-    Serial.print(" | Gyro (dps): X: ");
-    Serial.print(gx);
+    Serial.print(sensor_readings.temperature);
+    Serial.print(" | sensor_readings.gyroscope.yro (dps): X: ");
+    Serial.print(sensor_readings.gyroscope.x);
     Serial.print(" Y: ");
-    Serial.print(gy);
+    Serial.print(sensor_readings.gyroscope.y);
     Serial.print(" Z: ");
-    Serial.print(gz);
+    Serial.print(sensor_readings.gyroscope.z);
     Serial.print(" | Accel (g): X: ");
-    Serial.print(ax);
+    Serial.print(sensor_readings.accelerometer.x);
     Serial.print(" Y: ");
-    Serial.print(ay);
+    Serial.print(sensor_readings.accelerometer.y);
     Serial.print(" Z: ");
-    Serial.println(az);
+    Serial.println(sensor_readings.accelerometer.z);
 
     // Save data to SD card
     dataFile = SD.open("data.csv", FILE_WRITE);
     if (dataFile) {
-      dataFile.print(timestamp);
+      dataFile.print(sensor_readings.timestamp);
       dataFile.print(",");
-      dataFile.print(temperature);
+      dataFile.print(sensor_readings.temperature);
       dataFile.print(",");
-      dataFile.print(gx);
+      dataFile.print(sensor_readings.gyroscope.x);
       dataFile.print(",");
-      dataFile.print(gy);
+      dataFile.print(sensor_readings.gyroscope.y);
       dataFile.print(",");
-      dataFile.print(gz);
+      dataFile.print(sensor_readings.gyroscope.z);
       dataFile.print(",");
-      dataFile.print(ax);
+      dataFile.print(sensor_readings.accelerometer.x);
       dataFile.print(",");
-      dataFile.print(ay);
+      dataFile.print(sensor_readings.accelerometer.y);
       dataFile.print(",");
-      dataFile.println(az);
+      dataFile.println(sensor_readings.accelerometer.z);
       dataFile.close();
     } else {
       Serial.println(F("Error opening data.csv"));
