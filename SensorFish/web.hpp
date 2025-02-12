@@ -221,7 +221,7 @@ void process_livedata(void) {
   dtostrf(sensor_readings.temperature, 0, 3, buffer);
   current_client.client.println(buffer);
   
-  current_client.client.println("accelerometer: [");
+  current_client.client.print("accelerometer: [");
   dtostrf(sensor_readings.accelerometer.x, 0, 3, buffer);
   current_client.client.print(buffer);
   current_client.client.print(", ");
@@ -234,7 +234,7 @@ void process_livedata(void) {
   
   current_client.client.println("magnetometer: [0.000, 0.000, 0.000]");
   
-  current_client.client.println("gyroscope: [");
+  current_client.client.print("gyroscope: [");
   dtostrf(sensor_readings.gyroscope.x, 0, 3, buffer);
   current_client.client.print(buffer);
   current_client.client.print(", ");
