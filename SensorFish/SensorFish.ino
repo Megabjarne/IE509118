@@ -1,29 +1,19 @@
-#include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_LSM303_Accel.h>
-#include <Adafruit_LSM303DLH_Mag.h>
-#include <Adafruit_Simple_AHRS.h>
+#include <Arduino_LSM6DS3.h>
 #include <SPI.h>
 #include <SD.h>
-
 #include "web.hpp"
-
-// Create sensor instances.
-Adafruit_LSM303_Accel_Unified accel(30301);
-Adafruit_LSM303DLH_Mag_Unified mag(30302);
-
-// Create simple AHRS algorithm using the above sensors.
-Adafruit_Simple_AHRS ahrs(&accel, &mag);
 
 // SD card setup
 const int chipSelect = 10;
 File dataFile;
 
-void setup()
-{
-  Serial.begin(115200);
-  Serial.println(F("Initializing SD card..."));
+unsigned long last_sample = 0;
 
+void setup() {
+  Serial.begin(115200);
+  while (!Serial);  // Wait for Serial monitor to open
+
+  Serial.println(F("Initializing SD card..."));
   if (!SD.begin(chipSelect)) {
     Serial.println(F("SD card initialization failed!"));
     while (1);
@@ -34,92 +24,97 @@ void setup()
   dataFile = SD.open("data.csv", FILE_WRITE);
   if (dataFile) {
     if (dataFile.size() == 0) {
-      dataFile.println("Timestamp_ms,Roll,Pitch,Heading,AccelX,AccelY,AccelZ,MagX,MagY,MagZ");
+      // Updated headers: removed magnetometer and orientation data
+      dataFile.println("Timestamp_ms,Temperature,GyroX,GyroY,GyroZ,AccelX,AccelY,AccelZ");
     }
     dataFile.close();
   }
 
-  Serial.println(F("Adafruit 9 DOF Board AHRS Example\n"));
+  Serial.println(F("LSM6DS3 Sensor Example\n"));
 
-  // Initialize the sensors.
-  accel.begin();
-  mag.begin();
+  // Initialize the LSM6DS3 sensor
+  if (!IMU.begin()) {
+    Serial.println("Failed to initialize IMU!");
+    while (1);
+  }
 
-  // start web server
+  // Optionally print sensor sample rates for reference
+  Serial.print("Temperature sensor sample rate = ");
+  Serial.print(IMU.temperatureSampleRate());
+  Serial.println(" Hz");
+
+  Serial.print("Gyroscope sample rate = ");
+  Serial.print(IMU.gyroscopeSampleRate());
+  Serial.println(" Hz");
+
+  Serial.print("Accelerometer sample rate = ");
+  Serial.print(IMU.accelerationSampleRate());
+  Serial.println(" Hz");
+
+  // Start web server (assuming web_setup() is defined in web.hpp)
   web_setup();
 }
 
-unsigned long last_sample = 0;
-
-void loop(void)
-{
+void loop() {
+  // Sample every 100ms
   if (millis() - last_sample > 100) {
     last_sample = millis();
-    sensors_vec_t orientation;
-    sensors_event_t accel_event, mag_event;
-    unsigned long timestamp = millis(); // Get time in milliseconds
+    float temperature = 0.0, gx = 0.0, gy = 0.0, gz = 0.0;
+    float ax = 0.0, ay = 0.0, az = 0.0;
+    unsigned long timestamp = millis();
 
-    // Get accelerometer and magnetometer data
-    accel.getEvent(&accel_event);
-    mag.getEvent(&mag_event);
-
-    // Use the simple AHRS function to get the current orientation.
-    if (ahrs.getOrientation(&orientation))
-    {
-      /* Print orientation data */
-      Serial.print(F("Time(ms): "));
-      Serial.print(timestamp);
-      Serial.print(F(" | Roll: "));
-      Serial.print(orientation.roll);
-      Serial.print(F(" Pitch: "));
-      Serial.print(orientation.pitch);
-      Serial.print(F(" Heading: "));
-      Serial.println(orientation.heading);
+    if (IMU.temperatureAvailable()) {
+      IMU.readTemperature(temperature);
+    }
+    if (IMU.gyroscopeAvailable()) {
+      IMU.readGyroscope(gx, gy, gz);
+    }
+    if (IMU.accelerationAvailable()) {
+      IMU.readAcceleration(ax, ay, az);
     }
 
-    /* Print accelerometer data */
-    Serial.print(F("Accelerometer (m/s²): X="));
-    Serial.print(accel_event.acceleration.x);
-    Serial.print(F(" Y="));
-    Serial.print(accel_event.acceleration.y);
-    Serial.print(F(" Z="));
-    Serial.println(accel_event.acceleration.z);
-
-    /* Print magnetometer data */
-    Serial.print(F("Magnetometer (µT): X="));
-    Serial.print(mag_event.magnetic.x);
-    Serial.print(F(" Y="));
-    Serial.print(mag_event.magnetic.y);
-    Serial.print(F(" Z="));
-    Serial.println(mag_event.magnetic.z);
+    // Print sensor readings to Serial
+    Serial.print("Time(ms): ");
+    Serial.print(timestamp);
+    Serial.print(" | Temp (C): ");
+    Serial.print(temperature);
+    Serial.print(" | Gyro (dps): X: ");
+    Serial.print(gx);
+    Serial.print(" Y: ");
+    Serial.print(gy);
+    Serial.print(" Z: ");
+    Serial.print(gz);
+    Serial.print(" | Accel (g): X: ");
+    Serial.print(ax);
+    Serial.print(" Y: ");
+    Serial.print(ay);
+    Serial.print(" Z: ");
+    Serial.println(az);
 
     // Save data to SD card
     dataFile = SD.open("data.csv", FILE_WRITE);
     if (dataFile) {
       dataFile.print(timestamp);
       dataFile.print(",");
-      dataFile.print(orientation.roll);
+      dataFile.print(temperature);
       dataFile.print(",");
-      dataFile.print(orientation.pitch);
+      dataFile.print(gx);
       dataFile.print(",");
-      dataFile.print(orientation.heading);
+      dataFile.print(gy);
       dataFile.print(",");
-      dataFile.print(accel_event.acceleration.x);
+      dataFile.print(gz);
       dataFile.print(",");
-      dataFile.print(accel_event.acceleration.y);
+      dataFile.print(ax);
       dataFile.print(",");
-      dataFile.print(accel_event.acceleration.z);
+      dataFile.print(ay);
       dataFile.print(",");
-      dataFile.print(mag_event.magnetic.x);
-      dataFile.print(",");
-      dataFile.print(mag_event.magnetic.y);
-      dataFile.print(",");
-      dataFile.println(mag_event.magnetic.z);
+      dataFile.println(az);
       dataFile.close();
     } else {
       Serial.println(F("Error opening data.csv"));
     }
   }
 
+  // Process web server tasks
   web_process();
 }
