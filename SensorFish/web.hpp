@@ -55,7 +55,6 @@ struct {
     } index;
     struct {
       bool header_sent;
-      unsigned int bytes_sent;
       char filename[header_buffer_size];
     } filedownload;
   };
@@ -163,17 +162,15 @@ void process_unknown(void) {
   }
 
   if (strncmp(buff, "/files/", 7) == 0) {
-    current_client.type = current_client.FILEDOWNLOAD;
-    current_client.filedownload.header_sent = false;
-    current_client.filedownload.bytes_sent = 0;
-
-    buff += 7;
+    buff += 6;
     unsigned int i = 0;
-    while (buff[i] != ' ' && buff[i] != 0) {
+    while (buff[i] != ' ' && buff[i] != 0 && i < header_buffer_size - 6) {
       current_client.filedownload.filename[i] = buff[i];
       i++;
     }
     current_client.filedownload.filename[i] = 0;
+    current_client.filedownload.header_sent = false;
+    root = SD.open(current_client.filedownload.filename);
     Serial.print("Starting download of file ");
     Serial.println(current_client.filedownload.filename);
     return;
@@ -283,19 +280,39 @@ void process_filelist(void) {
   }
 };
 void process_filedownload(void) {
-  current_client.client.println("HTTP/1.1 200 OK");
-  current_client.client.println("Content-type:text/csv");
-  current_client.client.println("Content-Length: 14");
-  current_client.client.println("Content-Disposition: attachment; filename=data1.csv");
-  current_client.client.println();
+  if (!current_client.filedownload.header_sent) {
+    // check if the file is valid
+    if (!root) {
+      current_client.client.println("HTTP/1.1 404 File Not Found");
+      delay(1);
+      current_client.client.flush();
+      current_client.client.stop();
+      current_client.active = false;
+    }
+    current_client.client.println("HTTP/1.1 200 OK");
+    current_client.client.println("Content-type:text/csv");
+    current_client.client.print("Content-Length: ");
+    current_client.client.println(root.size());
+    current_client.client.print("Content-Disposition: attachment; filename=");
+    current_client.client.println(current_client.filedownload.filename);
+    current_client.client.println();
+    current_client.filedownload.header_sent = true;
+    return;
+  }
 
-  current_client.client.println("ok, ja");
-  current_client.client.println("1, 2");
-  delay(1);
+  char buffer[64];
+  unsigned int n_read;
+  n_read = root.read(buffer, 64);
 
-  current_client.client.flush();
-  current_client.client.stop();
-  current_client.active = false;
+  if (n_read > 0) {
+      current_client.client.write(buffer, n_read);
+  } else {
+      delay(1);
+
+      current_client.client.flush();
+      current_client.client.stop();
+      current_client.active = false;
+  }
 };
 
 #endif
