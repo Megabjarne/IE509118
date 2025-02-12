@@ -168,6 +168,7 @@ void process_unknown(void) {
       current_client.filedownload.filename[i] = buff[i];
       i++;
     }
+    current_client.type = current_client.FILEDOWNLOAD;
     current_client.filedownload.filename[i] = 0;
     current_client.filedownload.header_sent = false;
     root = SD.open(current_client.filedownload.filename);
@@ -308,6 +309,7 @@ void process_filedownload(void) {
       current_client.client.write(buffer, n_read);
   } else {
       delay(1);
+      root.close();
 
       current_client.client.flush();
       current_client.client.stop();
