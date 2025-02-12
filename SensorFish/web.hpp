@@ -48,6 +48,9 @@ struct {
     } unknown;
     struct {
       bool header_sent;
+    } filelist;
+    struct {
+      bool header_sent;
       unsigned int bytes_sent;
     } index;
     struct {
@@ -155,6 +158,7 @@ void process_unknown(void) {
   if (strncmp(buff, "/files ", 7) == 0) {
     current_client.type = current_client.FILELIST;
     root = SD.open("/");
+    current_client.filelist.header_sent = false;
     return;
   }
 
@@ -251,16 +255,22 @@ void process_livedata(void) {
 };
 
 void process_filelist(void) {
-  current_client.client.println("HTTP/1.1 200 OK");
-  current_client.client.println("Content-type:text/text");
-  current_client.client.println();
+  if (!current_client.filelist.header_sent) {
+      current_client.client.println("HTTP/1.1 200 OK");
+      current_client.client.println("Content-type:text/text");
+      current_client.client.println();
+      current_client.filelist.header_sent = true;
+      return;
+  }
 
   //current_client.client.println("\"data1.csv\" 1337 \"2025-02-04\"");
   File next_file = root.openNextFile();
   if (next_file) {
     if (!next_file.isDirectory()) {
+
+        current_client.client.print("\"");
         current_client.client.print(next_file.name());
-        current_client.client.print(" ");
+        current_client.client.print("\" ");
         current_client.client.print(next_file.size());
         current_client.client.println(" \"unknown date\"");
     }
