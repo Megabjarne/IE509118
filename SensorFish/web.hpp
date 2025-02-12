@@ -260,7 +260,7 @@ void process_filelist(void) {
   //current_client.client.println("\"data1.csv\" 1337 \"2025-02-04\"");
   File next_file = current_client.filelist.root.openNextFile();
   if (next_file) {
-    if (!next_file.isDirectory() && next_file.name().endsWith(".csv")) {
+    if (!next_file.isDirectory()) {
         current_client.client.print(next_file.name());
         current_client.client.print(" ");
         current_client.client.print(next_file.size());
@@ -272,6 +272,7 @@ void process_filelist(void) {
     current_client.client.flush();
     current_client.client.stop();
     current_client.active = false;
+  }
 };
 void process_filedownload(void) {
   current_client.client.println("HTTP/1.1 200 OK");
