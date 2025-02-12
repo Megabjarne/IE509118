@@ -5,6 +5,7 @@
 #include <avr/dtostrf.h>
 #include "index.h"
 #include "sensordata.h"
+#include <SD.h>
 
 #ifndef WIFI_SSID
   #define WIFI_SSID "test_ap"
@@ -49,7 +50,7 @@ struct {
       unsigned int bytes_sent;
     } index;
     struct {
-      unsigned int current_file_index;
+        File root;
     } filelist;
     struct {
       bool header_sent;
@@ -155,7 +156,7 @@ void process_unknown(void) {
 
   if (strncmp(buff, "/files ", 7) == 0) {
     current_client.type = current_client.FILELIST;
-    current_client.filelist.current_file_index = 0;
+    current_client.filelist.root = SD.open("/");
     return;
   }
 
@@ -256,12 +257,21 @@ void process_filelist(void) {
   current_client.client.println("Content-type:text/text");
   current_client.client.println();
 
-  current_client.client.println("\"data1.csv\" 1337 \"2025-02-04\"");
-  current_client.client.println("\"data2.csv\" 47 \"2025-02-05\"");
-  delay(1);
-  current_client.client.flush();
-  current_client.client.stop();
-  current_client.active = false;
+  //current_client.client.println("\"data1.csv\" 1337 \"2025-02-04\"");
+  File next_file = current_client.filelist.root.openNextFile();
+  if (next_file) {
+    if (!next_file.isDirectory() && next_file.name().endsWith(".csv")) {
+        current_client.client.print(next_file.name());
+        current_client.client.print(" ");
+        current_client.client.print(next_file.size());
+        current_client.client.println(" \"unknown date\"");
+    }
+  } else {
+    current_client.filelist.root.close();
+    delay(1);
+    current_client.client.flush();
+    current_client.client.stop();
+    current_client.active = false;
 };
 void process_filedownload(void) {
   current_client.client.println("HTTP/1.1 200 OK");
