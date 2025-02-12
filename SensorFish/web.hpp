@@ -2,7 +2,7 @@
 #define _WEB_CPP
 
 #include <WiFiNINA.h>
-#include <incbin.h>
+#include "index.h"
 
 #ifndef WIFI_SSID
   #define WIFI_SSID "test_ap"
@@ -11,7 +11,8 @@
   #define WIFI_PASSWORD "password"
 #endif
 
-INCTXT(IndexText, "../ui/index.html");
+#define INDEX_FILE_ARRAY ___ui_index_html
+#define INDEX_FILE_LENGTH ___ui_index_html_len
 
 char ssid[] = WIFI_SSID;
 char pass[] = WIFI_PASSWORD;
@@ -193,11 +194,11 @@ void process_index(void) {
   }
 
   // write the body of the index file
-  int n = current_client.client.write(gIndexTextData + current_client.index.bytes_sent, min(gIndexTextSize - current_client.index.bytes_sent, 64));
+  int n = current_client.client.write(INDEX_FILE_ARRAY + current_client.index.bytes_sent, min(INDEX_FILE_LENGTH - current_client.index.bytes_sent, 64));
   current_client.index.bytes_sent += n;
 
   // send final newline and close connection if the document body is done being sent
-  if (current_client.index.bytes_sent == gIndexTextSize) {
+  if (current_client.index.bytes_sent == INDEX_FILE_LENGTH) {
     current_client.client.println();
     current_client.client.flush();
     current_client.client.stop();
