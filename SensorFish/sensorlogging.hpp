@@ -2,6 +2,8 @@
 // Define the analog pin for the TMP36 sensor's Vout pin
 #define sensorPin A0
 
+const float high_acceleration_threshold = 2.0;
+
 // SD card setup
 const int chipSelect = 10;
 File dataFile;
@@ -129,4 +131,21 @@ void sensor_process(void) {
     } else {
       Serial.println(F("Error opening data.csv"));
     }
+}
+
+bool acceleration_is_high() {
+    if (!IMU.begin()) {
+      return false;
+    }
+
+    if (IMU.accelerationAvailable()) {
+      float x, y, z;
+      IMU.readAcceleration(
+        x,
+        y,
+        z
+      );
+      return (x*x + y*y + z*z) > high_acceleration_threshold * high_acceleration_threshold;
+    }
+    return false;
 }

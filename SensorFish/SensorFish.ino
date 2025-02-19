@@ -24,6 +24,10 @@ void setup() {
 }
 
 void switch_state(FishState new_state) {
+  Serial.print("Switching from state ");
+  Serial.print(fish_state);
+  Serial.print(" to state ");
+  Serial.println(new_state);
   switch (fish_state) {
     case LOW_POWER:
       // nothing to do
@@ -55,9 +59,28 @@ void switch_state(FishState new_state) {
 
 void loop() {
   int sleep_time;
+  int shake_counter;
   switch (fish_state) {
     case LOW_POWER:
-      LowPower.sleep(100);
+      Serial.println("entering low power mode");
+      shake_counter = 0;
+      while (1) {
+        LowPower.sleep(50);
+
+        if (acceleration_is_high()) {
+          shake_counter += 3;
+        }
+        if (shake_counter != 0) {
+          shake_counter--;
+        }
+        if (shake_counter > 10) {
+          while (!Serial);  // Wait for Serial monitor to open
+          delay(1500);
+          Serial.println("Stop shaking me!");
+          switch_state(SERVING);
+          break;
+        }
+      }
       break;
     case COLLECTING:
       sleep_time = sensor_period - (int)(millis() - last_sample_time) - 1;

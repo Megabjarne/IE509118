@@ -60,7 +60,7 @@ struct {
   };
 } current_client;
 
-void web_setup(void) {
+bool web_setup(void) {
   WiFi.config(IPAddress(10, 10, 10, 1));
 
   delay(1000);
