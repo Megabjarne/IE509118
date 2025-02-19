@@ -66,16 +66,22 @@ void web_setup(void) {
   delay(1000);
 
   auto status = WL_AP_LISTENING+1;
+  int ap_creation_attempts = 0;
   while (status != WL_AP_LISTENING) {
     status = WiFi.beginAP(ssid, pass);
     Serial.println("Creating ap failed");
-    delay(1000);
+    ap_creation_attempts++;
+    delay(100);
+    if (ap_creation_attempts > 50) {
+      return false;
+    }
   }
   Serial.println("Creating ap succeeded");
 
   delay(1000);
 
   server.begin();
+  return true;
 }
 
 void web_teardown(void) {
@@ -182,12 +188,12 @@ void process_unknown(void) {
   }
 
   // nothing matched, reject the connection
-    Serial.print("invalid request: ");
-    Serial.println(buff);
-    current_client.client.println("HTTP/1.1 400 HUH?");
-    current_client.client.println();
-    current_client.client.stop();
-    current_client.active = false;
+  Serial.print("invalid request: ");
+  Serial.println(buff);
+  current_client.client.println("HTTP/1.1 400 HUH?");
+  current_client.client.println();
+  current_client.client.stop();
+  current_client.active = false;
 }
 
 void process_index(void) {
