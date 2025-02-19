@@ -2,7 +2,7 @@
 // Define the analog pin for the TMP36 sensor's Vout pin
 #define sensorPin A0
 
-const float high_acceleration_threshold = 2.0;
+const float high_acceleration_threshold = 1.4;
 
 // SD card setup
 const int chipSelect = 10;
