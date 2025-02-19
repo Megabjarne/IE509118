@@ -78,6 +78,10 @@ void web_setup(void) {
   server.begin();
 }
 
+void web_teardown(void) {
+  WiFi.end();
+}
+
 void web_process(void) {
   if (!current_client.active) {
     // wait for new client
