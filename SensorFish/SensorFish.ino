@@ -25,6 +25,7 @@ void setup() {
   Serial.println("Starting up");
   configure_sd_card();
   delay(2000); // give us time to upload new sketch in case the device becomes inaccessible during sleep
+  switch_state(SERVING); // Start in serving mode
 }
 
 void configure_sd_card(void) {
