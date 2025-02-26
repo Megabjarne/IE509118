@@ -14,8 +14,8 @@
   #define WIFI_PASSWORD "password"
 #endif
 
-#define INDEX_FILE_ARRAY ___ui_index_html
-#define INDEX_FILE_LENGTH ___ui_index_html_len
+#define INDEX_FILE_ARRAY index_html_gz
+#define INDEX_FILE_LENGTH index_html_gz_len
 
 char ssid[] = WIFI_SSID;
 char pass[] = WIFI_PASSWORD;
@@ -201,6 +201,7 @@ void process_index(void) {
   if (!current_client.index.header_sent) {
     current_client.client.println("HTTP/1.1 200 OK");
     current_client.client.println("Content-type:text/html");
+    current_client.client.println("Content-Encoding: gzip");
     current_client.client.println();
     current_client.index.header_sent = true;
     return;
