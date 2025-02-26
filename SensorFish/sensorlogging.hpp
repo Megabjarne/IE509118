@@ -4,8 +4,6 @@
 
 const float high_acceleration_threshold = 1.4;
 
-// SD card setup
-const int chipSelect = 10;
 File dataFile;
 
 // Timer for reading the TMP36 sensor every 1000 ms
@@ -17,13 +15,6 @@ int tempIndex = 0;
 int tempCount = 0; // how many readings have been stored (max 10)
 
 bool sensor_setup(void) {
-  Serial.println(F("Initializing SD card..."));
-  if (!SD.begin(chipSelect)) {
-    Serial.println(F("SD card initialization failed!"));
-    return false;
-  }
-  Serial.println(F("SD card initialized."));
-
   // Create/open file and write headers if new
   dataFile = SD.open("data.csv", FILE_WRITE);
   if (dataFile) {

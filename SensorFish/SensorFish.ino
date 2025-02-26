@@ -9,6 +9,9 @@
 const int sensor_period = 10;  // ms
 unsigned long last_sample_time = 0;
 
+// SD card setup
+const int chipSelect = 10;
+
 enum FishState {
   LOW_POWER,
   COLLECTING,
@@ -20,7 +23,17 @@ void setup() {
   Serial.begin(115200);
   while (!Serial);  // Wait for Serial monitor to open
   Serial.println("Starting up");
+  configure_sd_card();
   delay(2000); // give us time to upload new sketch in case the device becomes inaccessible during sleep
+}
+
+void configure_sd_card(void) {
+  Serial.println(F("Initializing SD card..."));
+  if (!SD.begin(chipSelect)) {
+    Serial.println(F("SD card initialization failed!"));
+  } else {
+    Serial.println(F("SD card initialized."));
+  }
 }
 
 void switch_state(FishState new_state) {
