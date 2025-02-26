@@ -138,8 +138,11 @@ void process_unknown(void) {
       return;
     }
   }
-  Serial.println("Received request");
-  Serial.println(current_client.unknown.header_buffer);
+  // don't spam output with "/live" requests
+  if (strncmp(current_client.unknown.header_buffer, "GET /live ", 10) != 0) {
+    Serial.println("Received request");
+    Serial.println(current_client.unknown.header_buffer);
+  }
   // we've filled the header buffer, we parse it to figure out what's next
   const char* buff = current_client.unknown.header_buffer;
   if (strncmp(buff, "GET ", 4) != 0) {
